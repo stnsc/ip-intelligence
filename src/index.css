@@ -1,0 +1,27 @@
+:root{
+  background-color: #131313;
+  color:aliceblue;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.content-element {
+  position: fixed;
+  height: 100svh;
+}
+
+.content-element::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 100px 100px;
+  animation: grid-drift 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 100px 100px, 100px 100px; }
+}
