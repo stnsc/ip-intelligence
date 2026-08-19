@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import IpModal from './components/IpModal'
+import { fetchIpData } from './services/ipLookup'
+import type { IpData } from './services/ipLookup'
 
 type FraudTier = 'low' | 'medium' | 'high' | 'critical'
 
 function getFraudTier(score: number): FraudTier {
-  if (score <= 29) return 'low'
-  if (score <= 59) return 'medium'
-  if (score <= 79) return 'high'
+  if (score <= 0.29) return 'low'
+  if (score <= 0.59) return 'medium'
+  if (score <= 0.79) return 'high'
   return 'critical'
 }
 
@@ -23,45 +25,34 @@ function formatIpForDisplay(ip: string): string {
   return `${ip.slice(0, prefixLength)}:...:${ip.slice(-suffixLength)}`
 }
 
-// placeholder data
-const ipData = {
-  "ip": "8.8.8.8",
-  "risk": {
-    "score": 3,
-    "reasons": []
-  },
-  network: {
-    asn: 'AS15169',
-    organization: 'Google LLC',
-    domain: 'google.com'
-  },
-  location: {
-    country: 'United States',
-    countryCode: 'US',
-    continent: 'North America'
-  },
-  abuse: {
-    confidenceScore: 0,
-    totalReports: 0,
-    distinctReporters: 0,
-    lastReportedAt: null,
-    isTor: false,
-    usageType: null,
-    isp: null,
-    domain: null,
-    hostnames: []
-  },
-  sources: {
-    ipinfo: 'success',
-    abuseipdb: 'success'
-  }
+const initialIpData: IpData = {
+  ip: 'Press [SPACE]',
+  verdict: '',
+  score: 0,
+  confidence: 0,
+  isVpn: false,
+  isProxy: false,
+  vpnProvider: null,
+  asn: 'N/A',
+  org: 'N/A',
+  isp: 'N/A',
+  country: 'N/A',
+  countryCode: 'N/A',
+  city: 'N/A',
+  lat: 0,
+  lon: 0,
+  type: 'N/A',
+  signals: [],
+  requestId: 'N/A'
 }
 
 function App() {
-  const [ipAddress, setIpAddress] = useState(ipData.ip)
+  const [ipAddress, setIpAddress] = useState(initialIpData.ip)
   const [modalOpen, setModalOpen] = useState(false)
-  const [fraudScore, setFraudScore] = useState(ipData.risk.score)
+  const [ipData, setIpData] = useState<IpData>(initialIpData)
+  const [loading, setLoading] = useState(false)
 
+  const fraudScore = ipData.score
   const tier = getFraudTier(fraudScore)
 
   useEffect(() => {
@@ -78,16 +69,36 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [modalOpen])
 
-  const handleIpSubmit = (ip: string) => {
+  const handleIpSubmit = async (ip: string) => {
     setIpAddress(ip)
+    setLoading(true)
+
+    try {
+      const data = await fetchIpData(ip)
+      setIpData(data)
+      setIpAddress(data.ip)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const formatValue = (value: unknown) => {
     if (value === null || value === undefined || value === '') return 'N/A'
-    if (Array.isArray(value) && value.length === 0) return 'None'
     if (typeof value === 'boolean') return value ? 'Yes' : 'No'
     return String(value)
   }
+
+  const matchedSignals = ipData.signals.filter(signal => signal.matched).length
+  const totalSignals = ipData.signals.length
+
+  const hasCoordinates = ipData.lat !== 0 || ipData.lon !== 0
+  const lonMin = ipData.lon - 0.01
+  const latMin = ipData.lat - 0.01
+  const lonMax = ipData.lon + 0.01
+  const latMax = ipData.lat + 0.01
+  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${lonMin}%2C${latMin}%2C${lonMax}%2C${latMax}&layer=mapnik&marker=${ipData.lat}%2C${ipData.lon}`
 
   return (
     <>
@@ -100,58 +111,82 @@ function App() {
 
           <div className={`fraud-score-container ${tier}`}>
             <div className="fraud-score">
-              <p id="fraud-score-text">Fraud Score:</p>
-              <p id="fraud-score-value">{ipData.risk.score}%</p>
+              <p id="fraud-score-text">Risk Score:</p>
+              <p id="fraud-score-value">{Math.round(fraudScore * 100)}%</p>
             </div>
           </div>
 
           <div className="info-boxes-container">
-            <div className="box info-box network-location-box" >
+            <div className="box info-box network-location-box">
               <h2 className="info-box-title">Network & Location</h2>
               <div className="info-sections">
                 <div className="info-section">
-                  <h3>Network</h3>
-                  <div className="info-row"><span>ASN</span><span>{ipData.network.asn}</span></div>
-                  <div className="info-row"><span>Organization</span><span>{ipData.network.organization}</span></div>
-                  <div className="info-row"><span>Domain</span><span>{ipData.network.domain}</span></div>
-                </div>
-                <div className="info-section">
-                  <h3>Location</h3>
-                  <div className="info-row"><span>Country</span><span>{ipData.location.country}</span></div>
-                  <div className="info-row"><span>Country Code</span><span>{ipData.location.countryCode}</span></div>
-                  <div className="info-row"><span>Continent</span><span>{ipData.location.continent}</span></div>
+                  <div className="info-row"><span>ASN</span><span>{ipData.asn}</span></div>
+                  <div className="info-row"><span>Organization</span><span>{ipData.org}</span></div>
+                  <div className="info-row"><span>ISP</span><span>{ipData.isp}</span></div>
+                  <div className="info-row"><span>Country</span><span>{ipData.country}</span></div>
+                  <div className="info-row"><span>Country Code</span><span>{ipData.countryCode}</span></div>
+                  <div className="info-row"><span>City</span><span>{ipData.city}</span></div>
+                  <div className="info-row"><span>Coordinates</span><span>{`${ipData.lat}, ${ipData.lon}`}</span></div>
+                  <div className="info-row"><span>Type</span><span>{ipData.type}</span></div>
                 </div>
               </div>
             </div>
 
-            <div className="box info-box abuse-box">
-              <h2 className="info-box-title">Abuse</h2>
+            <div className="box info-box map-box">
+              <h2 className="info-box-title">Location Map</h2>
+              {hasCoordinates ? (
+                <iframe
+                  title="IP Location Map"
+                  className="map-embed"
+                  src={mapSrc}
+                  loading="lazy"
+                />
+              ) : (
+                <p className="map-placeholder">Enter an IP address to see its location on the map.</p>
+              )}
+            </div>
+
+            <div className="box info-box risk-box">
+              <h2 className="info-box-title">VPN & Risk</h2>
               <div className="info-sections">
                 <div className="info-section">
-                  <div className="info-row"><span>Confidence Score</span><span>{formatValue(ipData.abuse.confidenceScore)}</span></div>
-                  <div className="info-row"><span>Total Reports</span><span>{formatValue(ipData.abuse.totalReports)}</span></div>
-                  <div className="info-row"><span>Distinct Reporters</span><span>{formatValue(ipData.abuse.distinctReporters)}</span></div>
-                  <div className="info-row"><span>Last Reported At</span><span>{formatValue(ipData.abuse.lastReportedAt)}</span></div>
-                  <div className="info-row"><span>Is Tor</span><span>{formatValue(ipData.abuse.isTor)}</span></div>
-                  <div className="info-row"><span>Usage Type</span><span>{formatValue(ipData.abuse.usageType)}</span></div>
-                  <div className="info-row"><span>ISP</span><span>{formatValue(ipData.abuse.isp)}</span></div>
-                  <div className="info-row"><span>Domain</span><span>{formatValue(ipData.abuse.domain)}</span></div>
-                  <div className="info-row"><span>Hostnames</span><span>{formatValue(ipData.abuse.hostnames)}</span></div>
+                  <div className="info-row"><span>Verdict</span><span>{ipData.verdict || 'N/A'}</span></div>
+                  <div className="info-row"><span>Score</span><span>{Math.round(ipData.score * 100)}%</span></div>
+                  <div className="info-row"><span>Confidence</span><span>{Math.round(ipData.confidence * 100)}%</span></div>
+                  <div className="info-row"><span>VPN</span><span>{formatValue(ipData.isVpn)}</span></div>
+                  <div className="info-row"><span>Proxy</span><span>{formatValue(ipData.isProxy)}</span></div>
+                  <div className="info-row"><span>VPN Provider</span><span>{formatValue(ipData.vpnProvider)}</span></div>
                 </div>
               </div>
             </div>
 
-            <div className="box info-box sources-box">
-              <h2 className="info-box-title">Sources</h2>
+            <div className="box info-box signals-box">
+              <h2 className="info-box-title">Signals & Request</h2>
               <div className="info-sections">
                 <div className="info-section">
-                  <div className="info-row"><span>IPinfo</span><span>{ipData.sources.ipinfo}</span></div>
-                  <div className="info-row"><span>AbuseIPDB</span><span>{ipData.sources.abuseipdb}</span></div>
+                  <div className="info-row"><span>Request ID</span><span>{ipData.requestId}</span></div>
+                  <div className="info-row"><span>Matched Signals</span><span>{matchedSignals} / {totalSignals}</span></div>
+                  {ipData.signals.map(signal => (
+                    <div className="info-row" key={signal.type}>
+                      <span>{signal.type}</span>
+                      <span>{signal.matched ? 'Yes' : 'No'} ({signal.weight})</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
       </section>
+
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-modal">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Looking up IP...</p>
+          </div>
+        </div>
+      )}
 
       <section id="footer" className="footer-element">
         <p className="font-xanh-mono italic" style={{ fontSize: '1.3rem' }}>IP Intelligence</p>
