@@ -42,10 +42,16 @@
     align-items: center;
     text-align: center;
     font-size: 3rem;
+    transition: border-color 0.3s ease, filter 0.3s ease;
 }
 
 .ip-display p {
     margin: 0;
+}
+
+.ip-display.invalid {
+    border-color: #ff4444;
+    filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.6));
 }
 
 .ip-input{

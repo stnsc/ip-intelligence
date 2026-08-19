@@ -25,6 +25,12 @@ function formatIpForDisplay(ip: string): string {
   return `${ip.slice(0, prefixLength)}:...:${ip.slice(-suffixLength)}`
 }
 
+function isValidIp(ip: string): boolean {
+  const ipv4 = /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/
+  const ipv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/
+  return ipv4.test(ip) || ipv6.test(ip)
+}
+
 const initialIpData: IpData = {
   ip: 'Press [SPACE]',
   verdict: '',
@@ -51,6 +57,7 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [ipData, setIpData] = useState<IpData>(initialIpData)
   const [loading, setLoading] = useState(false)
+  const [ipIsValid, setIpIsValid] = useState(true)
 
   const fraudScore = ipData.score
   const tier = getFraudTier(fraudScore)
@@ -70,11 +77,21 @@ function App() {
   }, [modalOpen])
 
   const handleIpSubmit = async (ip: string) => {
-    setIpAddress(ip)
+    const trimmedIp = ip.trim()
+
+    if (!isValidIp(trimmedIp)) {
+      setIpAddress(trimmedIp)
+      setIpIsValid(false)
+      setLoading(false)
+      return
+    }
+
+    setIpIsValid(true)
+    setIpAddress(trimmedIp)
     setLoading(true)
 
     try {
-      const data = await fetchIpData(ip)
+      const data = await fetchIpData(trimmedIp)
       setIpData(data)
       setIpAddress(data.ip)
     } catch (error) {
@@ -104,7 +121,7 @@ function App() {
     <>
       <section id="background" className="background-element"></section>
       <section id="foreground" className="foreground-element">
-          <div className="box ip-display">
+          <div className={`box ip-display ${ipIsValid ? '' : 'invalid'}`}>
             <p id="ip-address-text">IP Address:</p>
             <p id="ip-address-value" className="font-xanh-mono">{formatIpForDisplay(ipAddress)}</p>
           </div>
