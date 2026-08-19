@@ -4,12 +4,21 @@
   font-family: "Space Grotesk", sans-serif;
 }
 
-.content-element {
-  position: fixed;
-  height: 100svh;
+#background{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100svw;
 }
 
-.content-element::before {
+.background-element {
+  position: fixed;
+  height: 100svh;
+  width: 100svw;
+  z-index: -1;
+}
+
+.background-element::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -24,4 +33,40 @@
 @keyframes grid-drift {
   from { background-position: 0 0, 0 0; }
   to   { background-position: 100px 100px, 100px 100px; }
+}
+
+.font-space-grotesk {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.font-xanh-mono {
+  font-family: "Xanh Mono", monospace;
+}
+
+.italic{
+  font-style: italic;
+}
+
+.footer-element {
+  line-height: .5;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  text-align: right;
+  padding: 1rem;
+  font-size: 1rem;
+  color: #888;
+
+  a:link{
+    color:#888
+  }
+
+  a:visited{
+    color:#888
+  }
+
+  a:hover{
+    color:#fff
+  }
 }
