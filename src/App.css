@@ -67,6 +67,47 @@
     padding: 0.5rem 1rem;
 }
 
+.ip-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: -1rem;
+}
+
+.check-ip-button {
+    padding: 0.65rem 1rem;
+    background-color: #0e0e0e;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    cursor: pointer;
+    font-family: "Xanh Mono", monospace;
+}
+
+.check-ip-button:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.7);
+    background-color: #1a1a1a;
+}
+
+.check-ip-button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.lookup-error {
+    margin: 0;
+    color: #ff7777;
+    text-align: center;
+}
+
+.location-note {
+    margin: 0.75rem 1rem 1rem;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
 
 .fraud-score-container{
     position: relative;
@@ -176,6 +217,46 @@
 .info-row span:first-child {
   font-family: "Xanh Mono", monospace;
   opacity: 0.8;
+}
+
+.signal-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.signal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.signal-name {
+  font-family: "Xanh Mono", monospace;
+}
+
+.signal-status {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.signal-item.matched .signal-status {
+  color: #ffb347;
+}
+
+.signal-item.not-matched .signal-status {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.signal-detail {
+  margin: 0.4rem 0;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.signal-weight {
+  font-size: 0.75rem;
+  opacity: 0.6;
 }
 
 .map-embed {

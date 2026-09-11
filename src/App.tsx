@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import IpModal from './components/IpModal'
-import { fetchIpData } from './services/ipLookup'
+import { fetchIpData, fetchPublicIp, fetchReverseDns } from './services/ipLookup'
 import type { IpData } from './services/ipLookup'
 
 type FraudTier = 'low' | 'medium' | 'high' | 'critical'
@@ -23,6 +23,14 @@ function formatIpForDisplay(ip: string): string {
   const suffixLength = 9
 
   return `${ip.slice(0, prefixLength)}:...:${ip.slice(-suffixLength)}`
+}
+
+function formatSignalName(type: string): string {
+  return type
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, character => character.toUpperCase())
 }
 
 function isValidIp(ip: string): boolean {
@@ -58,6 +66,8 @@ function App() {
   const [ipData, setIpData] = useState<IpData>(initialIpData)
   const [loading, setLoading] = useState(false)
   const [ipIsValid, setIpIsValid] = useState(true)
+  const [reverseDns, setReverseDns] = useState<string | null>(null)
+  const [lookupError, setLookupError] = useState<string | null>(null)
 
   const fraudScore = ipData.score
   const tier = getFraudTier(fraudScore)
@@ -83,20 +93,42 @@ function App() {
       setIpAddress(trimmedIp)
       setIpIsValid(false)
       setLoading(false)
+      setLookupError('Enter a valid IPv4 or IPv6 address.')
       return
     }
 
     setIpIsValid(true)
+    setLookupError(null)
+    setReverseDns(null)
     setIpAddress(trimmedIp)
     setLoading(true)
 
     try {
-      const data = await fetchIpData(trimmedIp)
+      const [data, hostname] = await Promise.all([
+        fetchIpData(trimmedIp),
+        fetchReverseDns(trimmedIp).catch(() => null)
+      ])
       setIpData(data)
       setIpAddress(data.ip)
+      setReverseDns(hostname)
     } catch (error) {
       console.error(error)
+      setLookupError('The lookup could not be completed. Please try again.')
     } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCheckMyIp = async () => {
+    setLoading(true)
+    setLookupError(null)
+
+    try {
+      const publicIp = await fetchPublicIp()
+      await handleIpSubmit(publicIp)
+    } catch (error) {
+      console.error(error)
+      setLookupError('We could not detect your public IP. Please enter it manually.')
       setLoading(false)
     }
   }
@@ -122,8 +154,14 @@ function App() {
       <section id="background" className="background-element"></section>
       <section id="foreground" className="foreground-element">
           <div className={`box ip-display ${ipIsValid ? '' : 'invalid'}`}>
-            <p id="ip-address-text">IP Address:</p>
+            <p id="ip-address-text">{ipData.isVpn ? 'VPN Exit IP:' : 'IP Address:'}</p>
             <p id="ip-address-value" className="font-xanh-mono">{formatIpForDisplay(ipAddress)}</p>
+          </div>
+          <div className="ip-actions">
+            <button className="check-ip-button" type="button" onClick={handleCheckMyIp} disabled={loading}>
+              Check my IP
+            </button>
+            {lookupError && <p className="lookup-error">{lookupError}</p>}
           </div>
 
           <div className={`fraud-score-container ${tier}`}>
@@ -141,6 +179,7 @@ function App() {
                   <div className="info-row"><span>ASN</span><span>{ipData.asn}</span></div>
                   <div className="info-row"><span>Organization</span><span>{ipData.org}</span></div>
                   <div className="info-row"><span>ISP</span><span>{ipData.isp}</span></div>
+                  <div className="info-row"><span>Reverse DNS</span><span>{reverseDns || 'No PTR record'}</span></div>
                   <div className="info-row"><span>Country</span><span>{ipData.country}</span></div>
                   <div className="info-row"><span>Country Code</span><span>{ipData.countryCode}</span></div>
                   <div className="info-row"><span>City</span><span>{ipData.city}</span></div>
@@ -151,14 +190,21 @@ function App() {
             </div>
 
             <div className="box info-box map-box">
-              <h2 className="info-box-title">Location Map</h2>
+              <h2 className="info-box-title">{ipData.isVpn ? 'VPN Exit Location' : 'Location Map'}</h2>
               {hasCoordinates ? (
-                <iframe
-                  title="IP Location Map"
-                  className="map-embed"
-                  src={mapSrc}
-                  loading="lazy"
-                />
+                <>
+                  <iframe
+                    title={ipData.isVpn ? 'VPN exit IP location map' : 'IP location map'}
+                    className="map-embed"
+                    src={mapSrc}
+                    loading="lazy"
+                  />
+                  {ipData.isVpn && (
+                    <p className="location-note">
+                      This is the approximate location of the VPN exit server, not the user’s original location.
+                    </p>
+                  )}
+                </>
               ) : (
                 <p className="map-placeholder">Enter an IP address to see its location on the map.</p>
               )}
@@ -174,6 +220,7 @@ function App() {
                   <div className="info-row"><span>VPN</span><span>{formatValue(ipData.isVpn)}</span></div>
                   <div className="info-row"><span>Proxy</span><span>{formatValue(ipData.isProxy)}</span></div>
                   <div className="info-row"><span>VPN Provider</span><span>{formatValue(ipData.vpnProvider)}</span></div>
+                  {ipData.isVpn && <div className="info-row"><span>Exit IP</span><span>{formatIpForDisplay(ipData.ip)}</span></div>}
                 </div>
               </div>
             </div>
@@ -184,10 +231,18 @@ function App() {
                 <div className="info-section">
                   <div className="info-row"><span>Request ID</span><span>{ipData.requestId}</span></div>
                   <div className="info-row"><span>Matched Signals</span><span>{matchedSignals} / {totalSignals}</span></div>
-                  {ipData.signals.map(signal => (
-                    <div className="info-row" key={signal.type}>
-                      <span>{signal.type}</span>
-                      <span>{signal.matched ? 'Yes' : 'No'} ({signal.weight})</span>
+                  {ipData.signals.map((signal, index) => (
+                    <div className={`signal-item ${signal.matched ? 'matched' : 'not-matched'}`} key={`${signal.type}-${index}`}>
+                      <div className="signal-header">
+                        <span className="signal-name">{formatSignalName(signal.type)}</span>
+                        <span className="signal-status">{signal.matched ? 'Matched' : 'Not matched'}</span>
+                      </div>
+                      <p className="signal-detail">
+                        {signal.detail || (signal.matched
+                          ? 'This signal contributed to the risk assessment.'
+                          : 'This signal did not contribute to the risk assessment.')}
+                      </p>
+                      <span className="signal-weight">Weight: {signal.weight}</span>
                     </div>
                   ))}
                 </div>

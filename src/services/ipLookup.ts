@@ -26,6 +26,14 @@ export interface IpData {
   requestId: string
 }
 
+interface PublicIpResponse {
+  ip: string
+}
+
+interface DnsResponse {
+  Answer?: Array<{ type: number; data: string }>
+}
+
 interface IpLogsResponse {
   verdict: string
   score: number
@@ -85,4 +93,50 @@ export async function fetchIpData(ip: string): Promise<IpData> {
     signals: data.signals,
     requestId: data.request_id
   }
+}
+
+export async function fetchPublicIp(): Promise<string> {
+  const response = await fetch('https://api64.ipify.org?format=json')
+
+  if (!response.ok) {
+    throw new Error(`Public IP request failed with status ${response.status}`)
+  }
+
+  const data: PublicIpResponse = await response.json()
+  return data.ip
+}
+
+function getReverseDnsName(ip: string): string {
+  if (ip.includes(':')) {
+    const normalized = ip
+      .replace(/^::ffff:/i, '')
+      .split('::')
+
+    if (normalized.length === 2) {
+      const left = normalized[0] ? normalized[0].split(':') : []
+      const right = normalized[1] ? normalized[1].split(':') : []
+      const missingGroups = 8 - left.length - right.length
+      ip = [...left, ...Array(missingGroups).fill('0'), ...right]
+        .map(group => group.padStart(4, '0'))
+        .join('')
+    } else {
+      ip = ip.split(':').map(group => group.padStart(4, '0')).join('')
+    }
+
+    return `${ip.split('').reverse().join('.')}.ip6.arpa`
+  }
+
+  return `${ip.split('.').reverse().join('.')}.in-addr.arpa`
+}
+
+export async function fetchReverseDns(ip: string): Promise<string | null> {
+  const name = getReverseDnsName(ip)
+  const response = await fetch(`https://dns.google/resolve?name=${name}&type=PTR`)
+
+  if (!response.ok) {
+    throw new Error(`Reverse DNS request failed with status ${response.status}`)
+  }
+
+  const data: DnsResponse = await response.json()
+  return data.Answer?.find(answer => answer.type === 12)?.data.replace(/\.$/, '') ?? null
 }
