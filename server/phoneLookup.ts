@@ -122,13 +122,20 @@ export function createPhoneMiddleware(lookup = createPhoneLookup()) {
       }
       // Keep the endpoint same-origin and reject cross-site browser submissions.
       if (request.headers['sec-fetch-site'] === 'cross-site') throw new LookupError(403, 'Cross-site requests are not supported.')
-      let body = ''
-      for await (const chunk of request) {
-        body += chunk.toString()
+      // Vercel parses JSON before invoking Node handlers; Vite/Node provide a stream.
+      let input: unknown = (request as IncomingMessage & { body?: unknown }).body
+      if (input === undefined) {
+        let body = ''
+        for await (const chunk of request) {
+          body += chunk.toString()
+          if (Buffer.byteLength(body) > 256) throw new LookupError(413, 'Request is too large.')
+        }
+        try { input = JSON.parse(body) } catch { throw new LookupError(400, 'Invalid JSON request.') }
+      } else {
+        const body = typeof input === 'string' ? input : Buffer.isBuffer(input) ? input.toString() : JSON.stringify(input)
         if (Buffer.byteLength(body) > 256) throw new LookupError(413, 'Request is too large.')
+        try { input = JSON.parse(body) } catch { throw new LookupError(400, 'Invalid JSON request.') }
       }
-      let input: unknown
-      try { input = JSON.parse(body) } catch { throw new LookupError(400, 'Invalid JSON request.') }
       const phone = input && typeof input === 'object' ? (input as Record<string, unknown>).phone : undefined
       response.end(JSON.stringify(await lookup(phone)))
     } catch (error) {
