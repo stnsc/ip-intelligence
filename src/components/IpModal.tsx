@@ -27,9 +27,9 @@ function IpModal({ open, onClose, onSubmit }: IpModalProps) {
   }
 
   return (
-    <div className={`modal-overlay ${open ? 'open' : ''}`} onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>×</button>
+    <div className={`modal-overlay ${open ? 'open' : ''}`} onClick={onClose} inert={!open}>
+      <div className="modal-content" role="dialog" aria-modal="true" aria-label="IP lookup" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" aria-label="Close IP lookup" onClick={onClose}>×</button>
         <form onSubmit={handleSubmit}>
           <input
             ref={inputRef}
@@ -37,6 +37,7 @@ function IpModal({ open, onClose, onSubmit }: IpModalProps) {
             type="text"
             value={ip}
             onChange={(e) => setIp(e.target.value)}
+            aria-label="IP address"
             placeholder="Paste IP address here"
           />
           <button type="submit">Lookup</button>

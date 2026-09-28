@@ -26,10 +26,6 @@ export interface IpData {
   requestId: string
 }
 
-interface PublicIpResponse {
-  ip: string
-}
-
 interface DnsResponse {
   Answer?: Array<{ type: number; data: string }>
 }
@@ -93,17 +89,6 @@ export async function fetchIpData(ip: string): Promise<IpData> {
     signals: data.signals,
     requestId: data.request_id
   }
-}
-
-export async function fetchPublicIp(): Promise<string> {
-  const response = await fetch('https://api64.ipify.org?format=json')
-
-  if (!response.ok) {
-    throw new Error(`Public IP request failed with status ${response.status}`)
-  }
-
-  const data: PublicIpResponse = await response.json()
-  return data.ip
 }
 
 function getReverseDnsName(ip: string): string {

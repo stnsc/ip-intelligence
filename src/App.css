@@ -67,33 +67,6 @@
     padding: 0.5rem 1rem;
 }
 
-.ip-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: -1rem;
-}
-
-.check-ip-button {
-    padding: 0.65rem 1rem;
-    background-color: #0e0e0e;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-    cursor: pointer;
-    font-family: "Xanh Mono", monospace;
-}
-
-.check-ip-button:hover:not(:disabled) {
-    border-color: rgba(255, 255, 255, 0.7);
-    background-color: #1a1a1a;
-}
-
-.check-ip-button:disabled {
-    cursor: wait;
-    opacity: 0.6;
-}
-
 .lookup-error {
     margin: 0;
     color: #ff7777;
@@ -429,4 +402,298 @@
   border-color: rgba(255, 255, 255, 0.7);
   background-color: #1a1a1a;
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  width: 100%;
+}
+
+.page-navigation {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem clamp(1rem, 5vw, 3rem);
+}
+
+.back-link {
+  color: #dedede;
+  font-family: "Xanh Mono", monospace;
+  text-underline-offset: 0.3em;
+}
+
+.tool-menu {
+  width: min(960px, calc(100% - 3rem));
+  margin: clamp(3rem, 10vh, 7rem) auto;
+}
+
+.menu-heading {
+  margin-bottom: 2.5rem;
+}
+
+.eyebrow, .tool-status, .tool-action {
+  font-family: "Xanh Mono", monospace;
+}
+
+.eyebrow {
+  color: #aaa;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.menu-heading h1 {
+  font-family: "Xanh Mono", monospace;
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  max-width: 750px;
+  margin: 1rem 0;
+}
+
+.menu-heading > p:last-child, .tool-card p, .coming-soon p, .lookup-heading p {
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.tool-card:hover, .ip-display:hover {
+  border-color: #aaa;
+  background-color: #191919;
+}
+
+.tool-card h2 {
+  font-family: "Xanh Mono", monospace;
+  font-size: 1.6rem;
+  font-weight: 400;
+  margin: 0rem 0 0;
+}
+
+.tool-card p {
+  margin-bottom: 2rem;
+}
+
+.tool-action {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  margin-top: auto;
+}
+
+.coming-soon {
+  box-sizing: border-box;
+  width: min(640px, calc(100% - 3rem));
+  margin: 3rem auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.coming-soon h1 {
+  font-family: "Xanh Mono", monospace;
+  font-size: 2rem;
+  font-weight: 400;
+  padding: 0;
+}
+
+.coming-soon p {
+  margin-bottom: 2rem;
+}
+
+.lookup-heading {
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.lookup-heading h1 {
+  font-family: "Xanh Mono", monospace;
+  font-weight: 400;
+  margin: 0;
+}
+
+.lookup-heading p {
+  margin-bottom: 0;
+}
+
+.ip-display {
+  width: min(600px, calc(100% - 2rem));
+  color: inherit;
+  font-family: inherit;
+  font-size: clamp(1.5rem, 6vw, 3rem);
+  cursor: pointer;
+}
+
+.info-row span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.footer-element {
+  position: fixed;
+  box-sizing: border-box;
+  margin-top: 2rem;
+}
+
+
+:where(a, button, input):focus-visible {
+  outline: 2px solid #b6e8cb;
+  outline-offset: 5px;
+}
+
+@media (max-width: 600px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.phone-page {
+  width: min(800px, calc(100% - 2rem));
+  margin: 1rem auto 10rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.phone-form, .phone-summary {
+  padding: clamp(1rem, 4vw, 2rem);
+}
+
+.phone-form label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-family: "Xanh Mono", monospace;
+}
+
+.phone-input-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.phone-input-row input, .phone-input-row button {
+  padding: 0.85rem 1rem;
+  background: #0e0e0e;
+  border: 1px solid #666;
+  color: inherit;
+  font-family: "Xanh Mono", monospace;
+  font-size: 1rem;
+}
+
+.phone-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.phone-input-row button {
+  cursor: pointer;
+}
+
+.phone-input-row button:hover:not(:disabled) {
+  background: #252525;
+  border-color: #aaa;
+}
+
+.phone-input-row :disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.phone-note {
+  color: #aaa;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 1rem 0 0;
+}
+
+.lookup-source, .phone-status {
+  text-align: center;
+}
+
+.lookup-source a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
+.phone-results {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.phone-number {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  overflow-wrap: anywhere;
+}
+
+.phone-summary h2 {
+  font-size: 1.1rem;
+  color: #ccc;
+  font-weight: 400;
+}
+
+.phone-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 3rem;
+  margin: 1.5rem 0;
+}
+
+.phone-metrics span, .phone-metrics strong {
+  display: block;
+}
+
+.phone-metrics span {
+  color: #aaa;
+  margin-bottom: 0.5rem;
+}
+
+.phone-metrics strong {
+  font-family: "Xanh Mono", monospace;
+  font-size: 1.8rem;
+  font-weight: 400;
+}
+
+@media (max-width: 500px) {
+  .phone-input-row {
+    flex-direction: column;
+  }
+}
+
+.lookup-source {
+  color: #aaa;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 1rem 0 0;
+}
+
+.ip-source {
+  width: calc(100% - 2rem);
+  margin: 0 auto 10rem;
 }
