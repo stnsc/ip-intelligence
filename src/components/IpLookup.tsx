@@ -38,6 +38,15 @@ function isValidIp(ip: string): boolean {
   return ipv4.test(ip) || ipv6.test(ip)
 }
 
+function supportsWebGl(): boolean {
+  try {
+    const canvas = document.createElement('canvas')
+    return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'))
+  } catch {
+    return false
+  }
+}
+
 const initialIpData: IpData = {
   ip: 'Press [SPACE]',
   verdict: '',
@@ -67,6 +76,7 @@ function IpLookup() {
   const [ipIsValid, setIpIsValid] = useState(true)
   const [reverseDns, setReverseDns] = useState<string | null>(null)
   const [lookupError, setLookupError] = useState<string | null>(null)
+  const [showMapFallback, setShowMapFallback] = useState(() => !supportsWebGl())
 
   const fraudScore = ipData.score
   const tier = getFraudTier(fraudScore)
@@ -104,6 +114,7 @@ function IpLookup() {
     setLookupError(null)
     setReverseDns(null)
     setIpAddress(trimmedIp)
+    setShowMapFallback(!supportsWebGl())
     setLoading(true)
 
     try {
@@ -132,11 +143,14 @@ function IpLookup() {
   const totalSignals = ipData.signals.length
 
   const hasCoordinates = ipData.lat !== 0 || ipData.lon !== 0
+  const mapMarkerX = Math.min(100, Math.max(0, ((ipData.lon + 180) / 360) * 100))
+  const mapMarkerY = Math.min(100, Math.max(0, ((90 - ipData.lat) / 180) * 100))
   const lonMin = ipData.lon - 0.01
   const latMin = ipData.lat - 0.01
   const lonMax = ipData.lon + 0.01
   const latMax = ipData.lat + 0.01
   const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${lonMin}%2C${latMin}%2C${lonMax}%2C${latMax}&layer=mapnik&marker=${ipData.lat}%2C${ipData.lon}`
+  const detailedMapUrl = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(String(ipData.lat))}&mlon=${encodeURIComponent(String(ipData.lon))}#map=12/${encodeURIComponent(String(ipData.lat))}/${encodeURIComponent(String(ipData.lon))}`
 
   return (
     <>
@@ -176,12 +190,34 @@ function IpLookup() {
               <h2 className="info-box-title">{ipData.isVpn ? 'VPN Exit Location' : 'Location Map'}</h2>
               {hasCoordinates ? (
                 <>
-                  <iframe
-                    title={ipData.isVpn ? 'VPN exit IP location map' : 'IP location map'}
-                    className="map-embed"
-                    src={mapSrc}
-                    loading="lazy"
-                  />
+                  {showMapFallback ? (
+                    <div
+                      className="coordinate-map"
+                      role="img"
+                      aria-label={`${ipData.isVpn ? 'VPN exit' : 'IP'} location at latitude ${ipData.lat}, longitude ${ipData.lon}`}
+                    >
+                      <span className="map-equator" aria-hidden="true" />
+                      <span className="map-prime-meridian" aria-hidden="true" />
+                      <span
+                        className="map-marker"
+                        style={{ left: `${mapMarkerX}%`, top: `${mapMarkerY}%` }}
+                        aria-hidden="true"
+                      />
+                      <span className="map-coordinate-label">{ipData.lat.toFixed(4)}, {ipData.lon.toFixed(4)}</span>
+                    </div>
+                  ) : (
+                    <iframe
+                      key={mapSrc}
+                      title={ipData.isVpn ? 'VPN exit IP location map' : 'IP location map'}
+                      className="map-embed"
+                      src={mapSrc}
+                      loading="lazy"
+                      onError={() => setShowMapFallback(true)}
+                    />
+                  )}
+                  <a className="detailed-map-link" href={detailedMapUrl} target="_blank" rel="noopener noreferrer">
+                    Open detailed map <span aria-hidden="true">↗</span>
+                  </a>
                   {ipData.isVpn && (
                     <p className="location-note">
                       This is the approximate location of the VPN exit server, not the user’s original location.

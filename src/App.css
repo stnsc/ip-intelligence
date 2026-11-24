@@ -232,12 +232,75 @@
   opacity: 0.6;
 }
 
-.map-embed {
+.map-embed,
+.coordinate-map {
+  position: relative;
   width: 100%;
   height: 300px;
-  border: 0;
   border-radius: 4px;
+  overflow: hidden;
+}
+
+.map-embed {
+  display: block;
+  border: 0;
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(1.1);
+}
+
+.coordinate-map {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.05);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 10% 16.666%;
+}
+
+.map-equator,
+.map-prime-meridian {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.map-equator {
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+}
+
+.map-prime-meridian {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.map-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #ff5c5c;
+  box-shadow: 0 0 0 5px rgba(255, 92, 92, 0.2), 0 0 18px rgba(255, 92, 92, 0.9);
+  transform: translate(-50%, -50%);
+}
+
+.map-coordinate-label {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.65rem;
+  font-family: "Xanh Mono", monospace;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.detailed-map-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-family: "Xanh Mono", monospace;
+  color: white;
 }
 
 .map-placeholder {
