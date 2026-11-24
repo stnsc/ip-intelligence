@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import IpModal from './IpModal'
+import worldMap from '../assets/world-map.png'
 import { fetchIpData, fetchReverseDns } from '../services/ipLookup'
 import type { IpData } from '../services/ipLookup'
 
@@ -143,8 +144,11 @@ function IpLookup() {
   const totalSignals = ipData.signals.length
 
   const hasCoordinates = ipData.lat !== 0 || ipData.lon !== 0
-  const mapMarkerX = Math.min(100, Math.max(0, ((ipData.lon + 180) / 360) * 100))
-  const mapMarkerY = Math.min(100, Math.max(0, ((90 - ipData.lat) / 180) * 100))
+  const mapLatitude = Math.max(-85.05112878, Math.min(85.05112878, ipData.lat))
+  const mapMarkerX = ((ipData.lon + 180) / 360) * 100
+  const mercatorY = (1 - Math.asinh(Math.tan(mapLatitude * Math.PI / 180)) / Math.PI) * 50
+  // The Wikimedia PNG is square, with the Mercator map inset vertically.
+  const mapMarkerY = 16 + mercatorY * 0.86
   const lonMin = ipData.lon - 0.01
   const latMin = ipData.lat - 0.01
   const lonMax = ipData.lon + 0.01
@@ -196,8 +200,7 @@ function IpLookup() {
                       role="img"
                       aria-label={`${ipData.isVpn ? 'VPN exit' : 'IP'} location at latitude ${ipData.lat}, longitude ${ipData.lon}`}
                     >
-                      <span className="map-equator" aria-hidden="true" />
-                      <span className="map-prime-meridian" aria-hidden="true" />
+                      <img className="world-map" src={worldMap} alt="" />
                       <span
                         className="map-marker"
                         style={{ left: `${mapMarkerX}%`, top: `${mapMarkerY}%` }}
@@ -215,9 +218,18 @@ function IpLookup() {
                       onError={() => setShowMapFallback(true)}
                     />
                   )}
-                  <a className="detailed-map-link" href={detailedMapUrl} target="_blank" rel="noopener noreferrer">
-                    Open detailed map <span aria-hidden="true">↗</span>
-                  </a>
+                  <div className="map-actions">
+                    <button
+                      type="button"
+                      className="map-toggle"
+                      onClick={() => setShowMapFallback(current => !current)}
+                    >
+                      {showMapFallback ? 'Try interactive map' : 'Use lightweight map'}
+                    </button>
+                    <a className="detailed-map-link" href={detailedMapUrl} target="_blank" rel="noopener noreferrer">
+                      Open detailed map <span aria-hidden="true">↗</span>
+                    </a>
+                  </div>
                   {ipData.isVpn && (
                     <p className="location-note">
                       This is the approximate location of the VPN exit server, not the user’s original location.
